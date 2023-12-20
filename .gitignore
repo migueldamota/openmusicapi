@@ -1,0 +1,9 @@
+# IDE
+.vscode
+.idea
+
+# env
+.env
+
+# output
+/target
