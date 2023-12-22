@@ -1,8 +1,6 @@
 use actix_web::{Responder, Result, get, web};
 use serde::{Deserialize, Serialize};
 use crate::models::track::Track;
-use crate::utils::project::{AppState};
-use crate::utils::tokens::service::{Services};
 use crate::utils::tokens::spotify::Spotify;
 
 #[derive(Deserialize)]
@@ -17,7 +15,7 @@ struct SearchResponse {
 
 #[get("/search")]
 pub async fn search() -> Result<impl Responder> {
-    let spotify = Spotify::new();
+    let mut spotify = Spotify::new().await;
 
     let track = spotify.get_track_by_isrc("QZXDB2300042").await;
 

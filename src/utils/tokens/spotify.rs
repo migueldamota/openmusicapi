@@ -17,16 +17,16 @@ pub(crate) struct Spotify {
 }
 
 impl Spotify {
-    pub fn new() -> Spotify {
+    pub async fn new() -> Spotify {
         let mut spotify = Spotify { token: String::new() };
-        spotify.fetch_token();
+        spotify.fetch_token().await;
         spotify
     }
 
-    pub fn api_builder(&self, mut url: &str, method: Method) -> RequestBuilder {
+    pub fn api_builder(&self, url: &str, method: Method) -> RequestBuilder {
         let client = get_fetch_client();
 
-        let api_url = &format!("https://api.spotify.com/v1/{url}");
+        let api_url = &format!("https://api.spotify.com/v1{url}");
 
         client.request(method, api_url)
             .bearer_auth(self.get_token())
@@ -67,19 +67,29 @@ impl Spotify {
 
     pub async fn get_track_by_isrc(self, isrc: &str) -> Track {
 
-        let response = self.api_builder("/search", Method::GET)
-            .query(&[("type", "track"), ("q", &format!("isrc:{isrc}")[..])])
-            .send()
-            .await;
+        #[derive(Deserialize)]
+        struct APIResponse {
+            tracks: APIResponseTracks
+        }
 
-        match response {
+        #[derive(Deserialize)]
+        struct APIResponseTracks {
+            items: Vec<SpotifyTrack>
+        }
+
+        let response = self.api_builder("/search", Method::GET)
+            .query(&[("type", "track"), ("q", &format!("isrc:{isrc}")[..])]);
+
+        match response.send().await {
             Ok(response) => {
-                let track_data: SpotifyTrack = response.json().await.unwrap();
+                let track_data = response.json::<APIResponse>().await.unwrap();
+
+                let track = &track_data.tracks.items[0];
 
                 Track {
-                    title: track_data.name,
-                    duration_ms: track_data.duration_ms,
-                    isrc: track_data.external_ids.isrc,
+                    title: String::from(&track.name),
+                    duration_ms: track.duration_ms,
+                    isrc: String::from(&track.external_ids.isrc),
                 }
             }
             Err(_) => {

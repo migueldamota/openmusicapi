@@ -30,8 +30,7 @@ impl Project {
 
     pub async fn register_services(&mut self) {
         // Spotify
-        let mut spotify = Spotify::new();
-        spotify.fetch_token().await;
+        let spotify = Spotify::new().await;
         self.services.insert(Services::SPOTIFY, spotify);
 
         // Tidal
@@ -53,7 +52,7 @@ impl Project {
     }
 
     pub async fn listen(self) -> std::io::Result<()> {
-        use actix_web::{App, HttpServer, web};
+        use actix_web::{App, HttpServer};
 
         let config = self.config.clone();
 
