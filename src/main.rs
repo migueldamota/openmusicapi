@@ -3,24 +3,21 @@ mod routes;
 mod utils;
 
 use dotenv::dotenv;
+use crate::utils::project::{Config, Project};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    use actix_web::{App,HttpServer};
 
     // load environment variables.
     dotenv().ok();
 
-    println!("Started: http://localhost:8080");
+    let mut project = Project::new(Config {
+        host: String::from("127.0.0.1"),
+        port: 9000,
+    });
 
-    // Get access tokens.
-    // let spotify_token = utils::tokens::spotify::get_token().await;
+    // Register music services
+    project.register_services().await;
 
-    HttpServer::new(||
-        App::new()
-            .service(routes::search::search)
-    )
-        .bind(("127.0.0.1", 8080))?
-        .run()
-        .await
+    project.listen().await
 }

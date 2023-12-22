@@ -1,6 +1,9 @@
-use actix_web::{Responder, web, Result, get};
+use actix_web::{Responder, Result, get, web};
 use serde::{Deserialize, Serialize};
 use crate::models::track::Track;
+use crate::utils::project::{AppState};
+use crate::utils::tokens::service::{Services};
+use crate::utils::tokens::spotify::Spotify;
 
 #[derive(Deserialize)]
 struct SearchQuery {
@@ -9,24 +12,17 @@ struct SearchQuery {
 
 #[derive(Deserialize, Serialize)]
 struct SearchResponse {
-    items: Vec<Track>
+    items: Track
 }
 
 #[get("/search")]
 pub async fn search() -> Result<impl Responder> {
-    let size = 10;
-    let mut tracks: Vec<Track> = Vec::with_capacity(size);
+    let spotify = Spotify::new();
 
-    for _ in 0..size {
-        tracks.push(Track{
-            isrc: "123".to_string(),
-            title: "Hullu".to_string(),
-            duration: 50,
-        });
-    }
+    let track = spotify.get_track_by_isrc("QZXDB2300042").await;
 
     let data = SearchResponse{
-        items: tracks,
+        items: track,
     };
 
     Ok(web::Json(data))

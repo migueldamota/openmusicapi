@@ -1,6 +1,9 @@
 use base64::{engine::{general_purpose}, Engine as _};
+use reqwest::{Method, RequestBuilder};
 use serde::Deserialize;
-use crate::utils::utils::get_env;
+use crate::models::track::Track;
+use crate::utils::utils::{get_env, get_fetch_client};
+
 
 #[derive(Deserialize)]
 struct SpotifyResponse {
@@ -9,30 +12,91 @@ struct SpotifyResponse {
     // expires_in: u16,
 }
 
-pub async fn get_token() -> String {
-    let client_id = get_env("SPOTIFY_CLIENT_ID");
-    let client_secret = get_env("SPOTIFY_CLIENT_SECRET");
+pub(crate) struct Spotify {
+    token: String,
+}
 
-    let auth = general_purpose::STANDARD.encode(&format!("{client_id}:{client_secret}"));
+impl Spotify {
+    pub fn new() -> Spotify {
+        let mut spotify = Spotify { token: String::new() };
+        spotify.fetch_token();
+        spotify
+    }
 
-    let data = [("grant_type", "client_credentials")];
+    pub fn api_builder(&self, mut url: &str, method: Method) -> RequestBuilder {
+        let client = get_fetch_client();
 
-    let client = crate::utils::utils::get_fetch_client();
-    let response = client.post("https://accounts.spotify.com/api/token")
-        .header("Authorization", format!("Basic {auth}"))
-        .form(&data)
-        .send()
-        .await;
+        let api_url = &format!("https://api.spotify.com/v1/{url}");
 
-    match response {
-        Ok(res) => {
+        client.request(method, api_url)
+            .bearer_auth(self.get_token())
+    }
 
-            let data: Result<SpotifyResponse, _> = res.json().await;
+    fn get_token(&self) -> &String {
+        &self.token
+    }
 
-            data.unwrap().access_token
-        },
-        Err(_) => {
-            panic!("Invalid response. (Spotify token)")
+    pub(crate) async fn fetch_token(&mut self) -> &String {
+        let client_id = get_env("SPOTIFY_CLIENT_ID");
+        let client_secret = get_env("SPOTIFY_CLIENT_SECRET");
+
+        let auth = general_purpose::STANDARD.encode(&format!("{client_id}:{client_secret}"));
+
+        let client = get_fetch_client();
+        let response = client.post("https://accounts.spotify.com/api/token")
+            .header("Authorization", format!("Basic {auth}"))
+            .form(&[("grant_type", "client_credentials")])
+            .send()
+            .await;
+
+        match response {
+            Ok(res) => {
+                let data: Result<SpotifyResponse, _> = res.json().await;
+
+                self.token = data.unwrap().access_token.to_string();
+                &self.token
+            },
+            Err(error) => {
+                println!("{}", error.to_string());
+
+                // TODO: Handle invalid responses from Spotify
+                panic!("invalid response (Spotify Token)")
+            }
         }
     }
+
+    pub async fn get_track_by_isrc(self, isrc: &str) -> Track {
+
+        let response = self.api_builder("/search", Method::GET)
+            .query(&[("type", "track"), ("q", &format!("isrc:{isrc}")[..])])
+            .send()
+            .await;
+
+        match response {
+            Ok(response) => {
+                let track_data: SpotifyTrack = response.json().await.unwrap();
+
+                Track {
+                    title: track_data.name,
+                    duration_ms: track_data.duration_ms,
+                    isrc: track_data.external_ids.isrc,
+                }
+            }
+            Err(_) => {
+                panic!("There was an error getting a track")
+            }
+        }
+    }
+}
+
+#[derive(Deserialize)]
+struct SpotifyTrack {
+    name: String,
+    duration_ms: u32,
+    external_ids: SpotifyTrackExternalIds,
+}
+
+#[derive(Deserialize)]
+struct SpotifyTrackExternalIds {
+    isrc: String,
 }
