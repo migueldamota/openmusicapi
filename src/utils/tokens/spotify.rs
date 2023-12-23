@@ -19,9 +19,10 @@ pub(crate) struct Spotify {
 }
 
 impl Spotify {
-    pub async fn new() {
+    pub async fn new() -> Spotify {
         let mut spotify = Spotify { token: String::new() };
         spotify.fetch_token().await;
+        println!("Fetching...");
         spotify
     }
 
@@ -71,7 +72,7 @@ impl Service for Spotify {
         }
     }
 
-    async fn get_track_by_isrc(self, isrc: &str) -> Track {
+    async fn get_track_by_isrc(&self, isrc: &str) -> Track {
 
         #[derive(Deserialize)]
         struct APIResponse {
