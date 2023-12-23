@@ -1,7 +1,9 @@
+use async_trait::async_trait;
 use base64::{engine::{general_purpose}, Engine as _};
 use reqwest::{Method, RequestBuilder};
 use serde::Deserialize;
 use crate::models::track::Track;
+use crate::utils::tokens::service::Service;
 use crate::utils::utils::{get_env, get_fetch_client};
 
 
@@ -17,13 +19,13 @@ pub(crate) struct Spotify {
 }
 
 impl Spotify {
-    pub async fn new() -> Spotify {
+    pub async fn new() {
         let mut spotify = Spotify { token: String::new() };
         spotify.fetch_token().await;
         spotify
     }
 
-    pub fn api_builder(&self, url: &str, method: Method) -> RequestBuilder {
+    fn api_builder(&self, url: &str, method: Method) -> RequestBuilder {
         let client = get_fetch_client();
 
         let api_url = &format!("https://api.spotify.com/v1{url}");
@@ -31,12 +33,16 @@ impl Spotify {
         client.request(method, api_url)
             .bearer_auth(self.get_token())
     }
+}
+
+#[async_trait]
+impl Service for Spotify {
 
     fn get_token(&self) -> &String {
         &self.token
     }
 
-    pub(crate) async fn fetch_token(&mut self) -> &String {
+    async fn fetch_token(&mut self) -> &String {
         let client_id = get_env("SPOTIFY_CLIENT_ID");
         let client_secret = get_env("SPOTIFY_CLIENT_SECRET");
 
@@ -65,7 +71,7 @@ impl Spotify {
         }
     }
 
-    pub async fn get_track_by_isrc(self, isrc: &str) -> Track {
+    async fn get_track_by_isrc(self, isrc: &str) -> Track {
 
         #[derive(Deserialize)]
         struct APIResponse {

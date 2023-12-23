@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 use crate::routes;
-use crate::utils::tokens::service::{Services};
+use crate::utils::tokens::service::{Service, Services};
 use crate::utils::tokens::spotify::Spotify;
 
 pub struct Project {
     config: Config,
-    services: HashMap<Services, Spotify>,
+    services: HashMap<Services, Box<dyn Service>>,
 }
 
 #[derive(Clone)]
@@ -24,19 +24,16 @@ impl Project {
 
         Project {
             config,
-            services: HashMap::with_capacity(4),
+            services: HashMap::new(),
         }
     }
 
-    pub async fn register_services(&mut self) {
-        // Spotify
-        let spotify = Spotify::new().await;
-        self.services.insert(Services::SPOTIFY, spotify);
+    async fn register_services() -> HashMap<Services, Box<dyn Service>> {
+        let mut services = HashMap::new();
 
-        // Tidal
+        services.insert(Services::SPOTIFY, Box::new(Spotify::new().await));
 
-        // Apple Music
-        // services.insert(Services::TIDAL, Tidal::new());
+        services
     }
 
     pub fn get_service(&self, service: &Services) -> &Spotify {

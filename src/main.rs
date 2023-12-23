@@ -11,13 +11,10 @@ async fn main() -> std::io::Result<()> {
     // load environment variables.
     dotenv().ok();
 
-    let project = Project::new(Config {
+    let mut project = Project::new(Config {
         host: String::from("127.0.0.1"),
         port: 9000,
-    });
-
-    // Register music services
-    // project.register_services().await;
+    }).await;
 
     project.listen().await
 }
