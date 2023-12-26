@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 actix-web = "4"
+actix-rt = "2.9.0"
 base64 = "0.21.5"
 dotenv = "0.15.0"
 serde = { version = "1.0.193", features = ["derive"] }
@@ -14,3 +15,8 @@ reqwest = { version = "0.11.23", features = ["json"] }
 async-trait = "0.1.75"
 env_logger = "0.10.1"
 serde_json = "1.0.108"
+tokio = { version = "1.35", features = ["full"] }
+lazy_static = "1.4"
+diesel = { version = "2", features = ["r2d2", "postgres", "chrono"] }
+diesel_migrations = "2.1"
+chrono = { version = "0.4", features = ["serde"] }

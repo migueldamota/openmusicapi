@@ -1,11 +1,12 @@
 use async_trait::async_trait;
 use base64::{engine::{general_purpose}, Engine as _};
+use chrono::NaiveDateTime;
 use reqwest::{Method, RequestBuilder};
 use serde::Deserialize;
-use crate::models::track::Track;
+use crate::models::track::{Tracks};
 use crate::utils::tokens::service::Service;
 use crate::utils::utils::{get_env, get_fetch_client};
-
+use crate::models::spotify::Track as SpotifyTrack;
 
 #[derive(Deserialize)]
 struct SpotifyResponse {
@@ -20,7 +21,9 @@ pub(crate) struct Spotify {
 
 impl Spotify {
     pub async fn new() -> Spotify {
-        let mut spotify = Spotify { token: String::new() };
+        let mut spotify = Spotify {
+            token: String::new()
+        };
         spotify.fetch_token().await;
         println!("Fetching...");
         spotify
@@ -72,7 +75,7 @@ impl Service for Spotify {
         }
     }
 
-    async fn get_track_by_isrc(&self, isrc: &str) -> Track {
+    async fn get_track_by_isrc(&self, isrc: &str) -> Tracks {
 
         #[derive(Deserialize)]
         struct APIResponse {
@@ -93,10 +96,13 @@ impl Service for Spotify {
 
                 let track = &track_data.tracks.items[0];
 
-                Track {
+                Tracks {
                     title: String::from(&track.name),
                     duration_ms: track.duration_ms,
                     isrc: String::from(&track.external_ids.isrc),
+                    last_fetched: NaiveDateTime::default(),
+                    spotify_id: None,
+                    tidal_id: None,
                 }
             }
             Err(_) => {
@@ -104,16 +110,4 @@ impl Service for Spotify {
             }
         }
     }
-}
-
-#[derive(Deserialize)]
-struct SpotifyTrack {
-    name: String,
-    duration_ms: u32,
-    external_ids: SpotifyTrackExternalIds,
-}
-
-#[derive(Deserialize)]
-struct SpotifyTrackExternalIds {
-    isrc: String,
 }

@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::{Mutex};
 use actix_web::{web};
 use crate::routes;
 use crate::utils::tokens::service::{Service, Services};
@@ -42,16 +42,13 @@ impl Project {
         let config = self.config.clone();
 
         let services = Project::register_services().await;
+
         let data = web::Data::new(AppData {
-            services: Mutex::new(services)
+            services: Mutex::new(services),
         });
 
         HttpServer::new(move || {
             App::new()
-                // .wrap(
-                //     ErrorHandlers::new()
-                //         .default_handler(Project::error_handler)
-                // )
                 .app_data(data.clone())
                 .service(routes::tracks::get_track)
         })
@@ -59,15 +56,4 @@ impl Project {
             .run()
             .await
     }
-
-    // fn error_handler<B>(_res: ServiceResponse<B>) -> Result<ErrorHandlerResponse<B>> {
-    //     todo!()
-    //     let (req, res) = res.into_parts();
-    //
-    //     let res = ServiceResponse::new(req, res)
-    //         .map_into_boxed_body()
-    //         .map_into_right_body();
-    //
-    //     Ok(ErrorHandlerResponse::Response(res))
-    // }
 }

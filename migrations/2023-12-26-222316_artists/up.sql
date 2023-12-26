@@ -1,0 +1,5 @@
+CREATE TABLE artists (
+    id VARCHAR(24) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+
+)
