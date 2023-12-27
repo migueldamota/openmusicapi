@@ -1,6 +1,7 @@
 use std::fmt;
 use std::fmt::{Debug, Display};
 use actix_web::{HttpResponse, http::StatusCode, ResponseError};
+use serde::{Serialize};
 
 #[derive(Debug)]
 pub struct ErrorResponse {
@@ -30,8 +31,15 @@ impl ResponseError for ErrorResponse {
 
     fn error_response(&self) -> HttpResponse {
 
+        #[derive(Serialize)]
         struct Response {
-            error: ErrorResponse
+            error: ErrorResponse,
+        }
+
+        #[derive(Serialize)]
+        struct ErrorResponse {
+            message: String,
+            status: u16,
         }
 
         HttpResponse::build(self.status_code())
@@ -39,7 +47,7 @@ impl ResponseError for ErrorResponse {
             .json(Response {
                 error: ErrorResponse {
                     message: self.message.to_string(),
-                    status: self.status_code()
+                    status: self.status_code().as_u16(),
                 }
             })
     }
