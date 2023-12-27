@@ -1,9 +1,8 @@
 use async_trait::async_trait;
-use base64::{engine::{general_purpose}, Engine as _};
 use chrono::NaiveDateTime;
 use reqwest::{Method, RequestBuilder};
 use serde::Deserialize;
-use crate::models::track::{Tracks};
+use crate::models::track::{Track};
 use crate::utils::tokens::service::Service;
 use crate::utils::utils::{get_env, get_fetch_client};
 use crate::models::spotify::Track as SpotifyTrack;
@@ -25,7 +24,6 @@ impl Spotify {
             token: String::new()
         };
         spotify.fetch_token().await;
-        println!("Fetching...");
         spotify
     }
 
@@ -47,14 +45,14 @@ impl Service for Spotify {
     }
 
     async fn fetch_token(&mut self) -> &String {
+        println!("[Spotify] Fetching access token");
+
         let client_id = get_env("SPOTIFY_CLIENT_ID");
         let client_secret = get_env("SPOTIFY_CLIENT_SECRET");
 
-        let auth = general_purpose::STANDARD.encode(&format!("{client_id}:{client_secret}"));
-
         let client = get_fetch_client();
         let response = client.post("https://accounts.spotify.com/api/token")
-            .header("Authorization", format!("Basic {auth}"))
+            .basic_auth(client_id, Some(client_secret))
             .form(&[("grant_type", "client_credentials")])
             .send()
             .await;
@@ -75,7 +73,7 @@ impl Service for Spotify {
         }
     }
 
-    async fn get_track_by_isrc(&self, isrc: &str) -> Tracks {
+    async fn get_track_by_isrc(&self, isrc: &str) -> Track {
 
         #[derive(Deserialize)]
         struct APIResponse {
@@ -96,14 +94,14 @@ impl Service for Spotify {
 
                 let track = &track_data.tracks.items[0];
 
-                Tracks {
+                Track::from(Track {
                     title: String::from(&track.name),
                     duration_ms: track.duration_ms,
                     isrc: String::from(&track.external_ids.isrc),
                     last_fetched: NaiveDateTime::default(),
                     spotify_id: None,
                     tidal_id: None,
-                }
+                })
             }
             Err(_) => {
                 panic!("There was an error getting a track")

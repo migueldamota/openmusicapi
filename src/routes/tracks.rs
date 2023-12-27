@@ -13,27 +13,12 @@ struct TrackResponse {
 #[get("/tracks/{isrc}")]
 pub async fn get_track(req: HttpRequest, _data: web::Data<AppData>) -> Result<HttpResponse, ErrorResponse> {
     let isrc: &str = req.match_info().query("isrc");
-    // let db = &data.db;
-
-    // let services = data.services.lock().map_err(|_| {
-    //     actix_web::error::ErrorInternalServerError("Failed to lock services mutex")
-    // })?;
-    // let spotify_service = services.get(&Services::Spotify).ok_or_else(|| {
-    //     actix_web::error::ErrorInternalServerError("Failed to load Spotify service.")
-    // })?;
-
-    // let track = match load_track(db, isrc, spotify_service).await {
-    //     Ok(track) => track,
-    //     Err(_e) => return Err(ErrorResponse {
-    //         message: "Error".to_string(),
-    //         status: StatusCode::INTERNAL_SERVER_ERROR,
-    //     })
-    // };
 
     let track = match Tracks::find(isrc) {
         Ok(track) => track,
+        Err(diesel::result::Error::NotFound) => Tracks::fetch(isrc).await.ok().unwrap(),
         Err(e) => return Err(ErrorResponse {
-            message: format!("There was an error: {}", e.to_string()),
+            message: format!("Error while querying: {}", e.to_string()),
             status: StatusCode::INTERNAL_SERVER_ERROR,
         }),
     };

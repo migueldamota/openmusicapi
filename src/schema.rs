@@ -1,30 +1,31 @@
-
-diesel::table! {
-    tracks (isrc) {
-        isrc -> VarChar,
-        title -> Text,
-        duration_ms -> Integer,
-
-        last_fetched -> Timestamp,
-
-        spotify_id -> Nullable<VarChar>,
-        tidal_id -> Nullable<VarChar>,
-    }
-}
-
-diesel::table! {
-    tracks_artists (track_isrc, artist_id) {
-        track_isrc -> VarChar,
-        artist_id -> VarChar,
-    }
-}
-
+// @generated automatically by Diesel CLI.
 
 diesel::table! {
     artists (id) {
-        id -> VarChar,
-        name -> Text,
-
+        #[max_length = 24]
+        id -> Varchar,
+        #[max_length = 255]
+        name -> Varchar,
+        image_url -> Nullable<Text>,
         last_fetched -> Timestamp,
     }
 }
+
+diesel::table! {
+    tracks (isrc) {
+        #[max_length = 12]
+        isrc -> Varchar,
+        title -> Text,
+        duration_ms -> Int4,
+        last_fetched -> Timestamp,
+        #[max_length = 22]
+        spotify_id -> Nullable<Varchar>,
+        #[max_length = 11]
+        tidal_id -> Nullable<Varchar>,
+    }
+}
+
+diesel::allow_tables_to_appear_in_same_query!(
+    artists,
+    tracks,
+);

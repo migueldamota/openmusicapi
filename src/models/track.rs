@@ -6,6 +6,8 @@ use diesel::prelude::*;
 use diesel::result::Error;
 use serde::{Deserialize, Serialize};
 use crate::schema::tracks;
+use crate::utils::tokens::service::Service;
+use crate::utils::tokens::spotify::Spotify;
 
 #[derive(AsChangeset, Queryable, Selectable, Deserialize, Serialize, Debug, Insertable)]
 #[diesel(table_name = crate::schema::tracks)]
@@ -40,11 +42,20 @@ impl Tracks {
         Ok(track)
     }
 
+    pub async fn fetch(isrc: &str) -> Result<Self, Error> {
+
+        let spotify = Spotify::new().await;
+
+        let track = spotify.get_track_by_isrc(isrc).await;
+        let track = Tracks::create(track)?;
+
+        Ok(track)
+    }
+
     pub fn create(track: Track) -> Result<Self, Error> {
         let conn = &mut db::connection()?;
-        let track = Track::from(track);
         let track = diesel::insert_into(tracks::table)
-            .values(track)
+            .values(Track::from(track))
             .get_result(conn)?;
         Ok(track)
     }
@@ -71,13 +82,13 @@ impl Track {
             isrc: track.isrc,
             title: track.title,
             duration_ms: track.duration_ms,
+
             last_fetched: track.last_fetched,
             spotify_id: track.spotify_id,
             tidal_id: track.tidal_id,
         }
     }
 }
-
 
 // #[derive(Deserialize, Serialize)]
 // #[table_name = "artists"]
