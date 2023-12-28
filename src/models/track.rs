@@ -5,6 +5,7 @@ use crate::helpers::db;
 use diesel::prelude::*;
 use diesel::result::Error;
 use serde::{Deserialize, Serialize};
+use crate::models::spotify::Artist;
 use crate::schema::tracks;
 use crate::utils::tokens::service::Service;
 use crate::utils::tokens::spotify::Spotify;
@@ -18,9 +19,12 @@ pub struct Track {
     pub duration_ms: i32,
 
     pub last_fetched: NaiveDateTime,
+    pub album_id: String,
 
     pub spotify_id: Option<String>,
     pub tidal_id: Option<String>,
+
+    pub artists: Vec<Artist>,
 }
 
 #[derive(Debug, Deserialize, Queryable, Serialize)]
@@ -30,6 +34,7 @@ pub struct Tracks {
     pub duration_ms: i32,
 
     pub last_fetched: NaiveDateTime,
+    pub album_id: String,
 
     pub spotify_id: Option<String>,
     pub tidal_id: Option<String>,
@@ -84,16 +89,12 @@ impl Track {
             duration_ms: track.duration_ms,
 
             last_fetched: track.last_fetched,
+            album_id: String,
+
             spotify_id: track.spotify_id,
             tidal_id: track.tidal_id,
+
+            artists: track.artists,
         }
     }
 }
-
-// #[derive(Deserialize, Serialize)]
-// #[table_name = "artists"]
-// pub struct Artist {
-//     pub id: String,
-//     pub name: String,
-//     pub image_url: String,
-// }

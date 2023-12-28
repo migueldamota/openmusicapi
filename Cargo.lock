@@ -1051,6 +1051,7 @@ dependencies = [
  "dotenv",
  "env_logger",
  "lazy_static",
+ "log",
  "reqwest",
  "serde",
  "serde_json",

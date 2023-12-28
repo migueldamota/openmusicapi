@@ -1,6 +1,13 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
+    artist_tracks (artist_id, track_id) {
+        artist_id -> Varchar,
+        track_id -> Varchar,
+    }
+}
+
+diesel::table! {
     artists (id) {
         #[max_length = 24]
         id -> Varchar,
@@ -26,6 +33,7 @@ diesel::table! {
 }
 
 diesel::allow_tables_to_appear_in_same_query!(
+    artist_tracks,
     artists,
     tracks,
 );

@@ -45,7 +45,7 @@ impl Service for Spotify {
     }
 
     async fn fetch_token(&mut self) -> &String {
-        println!("[Spotify] Fetching access token");
+        log::info!("Fetching token...");
 
         let client_id = get_env("SPOTIFY_CLIENT_ID");
         let client_secret = get_env("SPOTIFY_CLIENT_SECRET");
@@ -62,10 +62,11 @@ impl Service for Spotify {
                 let data: Result<SpotifyResponse, _> = res.json().await;
 
                 self.token = data.unwrap().access_token.to_string();
+                // println!("{}", self.token);
                 &self.token
             },
             Err(error) => {
-                println!("{}", error.to_string());
+                log::error!("{}", error.to_string());
 
                 // TODO: Handle invalid responses from Spotify
                 panic!("invalid response (Spotify Token)")
@@ -86,7 +87,7 @@ impl Service for Spotify {
         }
 
         let response = self.api_builder("/search", Method::GET)
-            .query(&[("type", "track"), ("q", &format!("isrc:{isrc}")[..])]);
+            .query(&[("type", "track"), ("q", format!("isrc:{isrc}"))[..]]);
 
         match response.send().await {
             Ok(response) => {
@@ -101,6 +102,7 @@ impl Service for Spotify {
                     last_fetched: NaiveDateTime::default(),
                     spotify_id: None,
                     tidal_id: None,
+                    artists: Vec::from(&track.artists),
                 })
             }
             Err(_) => {
